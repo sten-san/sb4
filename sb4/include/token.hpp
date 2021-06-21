@@ -1,4 +1,5 @@
 #pragma once
+#include <utility>
 #include <iterator>
 #include <tuple>
 #include <cstddef>
@@ -284,5 +285,53 @@ namespace sb4 {
             { std::size(separator), separator },
         };
     }
+
+    constexpr bool belong(token_type type, token_class class_) {
+        auto index = size_t(class_);
+        if (std::size(constants::types) <= index) {
+            return false;
+        }
+
+        auto [size, first] = constants::types[index];
+        auto last = first + size;
+
+        while (first != last) {
+            if (*first++ == type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    struct location {
+        constexpr location(size_t row, size_t col) noexcept:
+            row(row), col(col) {
+        }
+        constexpr location() noexcept:
+            location(0, 0) {
+        }
+
+        size_t row = 0;
+        size_t col = 0;
+    };
+
+    struct token {
+        template <typename = nullptr_t>
+        token(ustring &&raw, token_type type, location loc):
+            raw(std::move(raw)), type(type), loc(loc) {
+        }
+        token(ustring_view raw, token_type type, location loc):
+            raw(raw), type(type), loc(loc) {
+        }
+
+        bool belong(token_class class_) const {
+            return sb4::belong(type, class_);
+        }
+
+        ustring raw;
+        token_type type;
+        location loc;
+    };
 }
 
