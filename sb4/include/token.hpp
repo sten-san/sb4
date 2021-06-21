@@ -177,13 +177,13 @@ namespace sb4 {
     };
 
     namespace constants {
-        constexpr token_type ident[] = {
+        constexpr token_type ident_types[] = {
             token_type::vident,
             token_type::cident,
             token_type::label,
         };
 
-        constexpr token_type reserved[] = {
+        constexpr token_type reserved_types[] = {
             token_type::if_,
             token_type::then,
             token_type::else_,
@@ -228,7 +228,7 @@ namespace sb4 {
             token_type::enum_,
         };
 
-        constexpr token_type rvalue[] = {
+        constexpr token_type rvalue_types[] = {
             token_type::int_2,
             token_type::int_10,
             token_type::int_16,
@@ -238,13 +238,13 @@ namespace sb4 {
             token_type::label,
         };
 
-        constexpr token_type unary[] = {
+        constexpr token_type unary_types[] = {
             token_type::minus,
             token_type::lnot,
             token_type::bnot,
         };
 
-        constexpr token_type binary[] = {
+        constexpr token_type binary_types[] = {
             token_type::plus,
             token_type::minus,
             token_type::mult,
@@ -270,19 +270,19 @@ namespace sb4 {
             token_type::rrshift,
         };
 
-        constexpr token_type separator[] = {
+        constexpr token_type separator_types[] = {
             token_type::colon,
             token_type::eol,
             token_type::eof,
         };
 
         constexpr std::tuple<size_t, const token_type *> types[] = {
-            { std::size(ident), ident },
-            { std::size(reserved), reserved },
-            { std::size(rvalue), rvalue },
-            { std::size(unary), unary },
-            { std::size(binary), binary },
-            { std::size(separator), separator },
+            { std::size(ident_types), ident_types },
+            { std::size(reserved_types), reserved_types },
+            { std::size(rvalue_types), rvalue_types },
+            { std::size(unary_types), unary_types },
+            { std::size(binary_types), binary_types },
+            { std::size(separator_types), separator_types },
         };
     }
 
