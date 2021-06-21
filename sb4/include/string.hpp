@@ -67,7 +67,7 @@ namespace sb4 {
     }
 
     template <typename Pred>
-    constexpr size_t left_to(ustring_view s, Pred &&pred) {
+    constexpr ustring_view stake(ustring_view s, Pred &&pred) {
         size_t count = 0;
 
         for (auto c : s) {
@@ -77,7 +77,7 @@ namespace sb4 {
             ++count;
         }
 
-        return count;
+        return substr(s, 0, count);
     }
 }
 
