@@ -9,11 +9,17 @@ namespace sb4 {
             row(row), col(col) {
         }
         constexpr location() noexcept:
-            location(0, 0) {
+            location(1, 1) {
         }
 
-        size_t row = 0;
-        size_t col = 0;
+        constexpr void next_row() noexcept {
+            ++row; col = 1;
+        }
+        constexpr void next_col() noexcept {
+            ++col;
+        }
+
+        size_t row, col;
     };
 }
 

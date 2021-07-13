@@ -9,6 +9,7 @@ namespace sb4 {
     using uchar = char16_t;
     using ustring = std::u16string;
     using ustring_view = std::u16string_view;
+    using namespace std::string_view_literals;
 
     template <typename String>
     constexpr String substr(
@@ -38,6 +39,14 @@ namespace sb4 {
         return is_alnum(c) || is_digit(c);
     }
 
+    constexpr bool is_space(uchar c) noexcept {
+        return u" \t\v\f"sv.find(c) != ustring_view::npos;
+    }
+
+    constexpr bool is_newline(uchar c) noexcept {
+        return u"\r\n"sv.find(c) != ustring_view::npos;
+    }
+
     constexpr uchar to_upper(uchar c) noexcept {
         if (is_lower(c)) {
             return c - u'a' + u'A';
@@ -64,20 +73,6 @@ namespace sb4 {
         }
 
         return true;
-    }
-
-    template <typename Pred>
-    constexpr ustring_view stake(ustring_view s, Pred &&pred) {
-        size_t count = 0;
-
-        for (auto c : s) {
-            if (!pred(c)) {
-                break;
-            }
-            ++count;
-        }
-
-        return substr(s, 0, count);
     }
 }
 
