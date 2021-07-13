@@ -287,7 +287,7 @@ namespace sb4 {
         };
     }
 
-    constexpr bool belong(token_type type, token_class class_) {
+    constexpr bool belong(token_type type, token_class class_) noexcept {
         auto index = size_t(class_);
         if (std::size(constants::types) <= index) {
             return false;
@@ -318,7 +318,7 @@ namespace sb4 {
             raw(raw), type(type), loc(loc) {
         }
 
-        bool belong(token_class class_) const {
+        bool belong(token_class class_) const noexcept {
             return sb4::belong(type, class_);
         }
 

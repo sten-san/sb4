@@ -111,6 +111,28 @@ namespace sb4 {
             return *this;
         }
 
+        bool consume(token_type type) {
+            if (equal(type)) {
+                advance();
+                return true;
+            }
+            return false;
+        }
+        bool consume(token_class class_) {
+            if (equal(class_)) {
+                advance();
+                return true;
+            }
+            return false;
+        }
+
+        bool equal(token_type type) const noexcept {
+            return cur().type == type;
+        }
+        bool equal(token_class class_) const noexcept {
+            return cur().belong(class_);
+        }
+
         const token &prev() const noexcept {
             return cache_[0];
         }
