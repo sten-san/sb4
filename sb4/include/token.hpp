@@ -178,13 +178,13 @@ namespace sb4 {
     };
 
     namespace constants {
-        constexpr token_type ident_types[] = {
+        constexpr inline token_type ident_types[] = {
             token_type::vident,
             token_type::cident,
             token_type::label,
         };
 
-        constexpr token_type reserved_types[] = {
+        constexpr inline token_type reserved_types[] = {
             token_type::if_,
             token_type::then,
             token_type::else_,
@@ -229,7 +229,7 @@ namespace sb4 {
             token_type::enum_,
         };
 
-        constexpr token_type rvalue_types[] = {
+        constexpr inline token_type rvalue_types[] = {
             token_type::int_2,
             token_type::int_10,
             token_type::int_16,
@@ -239,13 +239,13 @@ namespace sb4 {
             token_type::label,
         };
 
-        constexpr token_type unary_types[] = {
+        constexpr inline token_type unary_types[] = {
             token_type::minus,
             token_type::lnot,
             token_type::bnot,
         };
 
-        constexpr token_type binary_types[] = {
+        constexpr inline token_type binary_types[] = {
             token_type::plus,
             token_type::minus,
             token_type::mult,
@@ -271,13 +271,13 @@ namespace sb4 {
             token_type::rrshift,
         };
 
-        constexpr token_type separator_types[] = {
+        constexpr inline token_type separator_types[] = {
             token_type::colon,
             token_type::eol,
             token_type::eof,
         };
 
-        constexpr std::tuple<size_t, const token_type *> types[] = {
+        constexpr inline std::tuple<size_t, const token_type *> types[] = {
             { std::size(ident_types), ident_types },
             { std::size(reserved_types), reserved_types },
             { std::size(rvalue_types), rvalue_types },
@@ -306,6 +306,10 @@ namespace sb4 {
     }
 
     struct token {
+        token():
+            token(snull, token_type::unknown, location(1, 1)) {
+        }
+
         template <typename = nullptr_t>
         token(ustring &&raw, token_type type, location loc):
             raw(std::move(raw)), type(type), loc(loc) {

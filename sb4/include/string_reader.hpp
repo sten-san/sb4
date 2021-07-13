@@ -1,5 +1,6 @@
 #pragma once
 #include <utility>
+#include <functional>
 #include <iterator>
 #include "sb4/include/string.hpp"
 #include "sb4/include/location.hpp"
@@ -22,15 +23,21 @@ namespace sb4 {
     public:
         template <typename Pred>
         ustring_view match(Pred &&pred) const {
+            return match(0, std::forward<Pred>(pred));
+        }
+
+        template <typename Pred>
+        ustring_view match(size_t pos, Pred &&pred) const {
             size_t count = 0;
-            for (auto c : cur_) {
+            auto s = substr(cur_, pos);
+            for (auto c : s) {
                 if (pred(c)) {
                     ++count;
                     continue;
                 }
                 break;
             }
-            return substr(cur_, 0, count);
+            return substr(s, 0, count);
         }
 
         template <typename Pred>
@@ -40,11 +47,22 @@ namespace sb4 {
             return s;
         }
 
-        bool equal(ustring_view s) const {
-            return substr(cur_, 0, std::size(s)) == s;
+        template <typename Eq = std::equal_to<void>>
+        bool equal(ustring_view s, Eq &&eq = Eq()) const {
+            return equal(0, s, std::forward<Eq>(eq));
         }
-        bool equal(uchar c) const {
-            return !empty() && cur_[0] == c;
+        template <typename Eq = std::equal_to<void>>
+        bool equal(uchar c, Eq &&eq = Eq()) const {
+            return equal(0, c, std::forward<Eq>(eq));
+        }
+
+        template <typename Eq = std::equal_to<void>>
+        bool equal(size_t pos, ustring_view s, Eq &&eq = Eq()) const {
+            return eq(substr(cur_, pos, std::size(s)), s);
+        }
+        template <typename Eq = std::equal_to<void>>
+        bool equal(size_t pos, uchar c, Eq &&eq = Eq()) const {
+            return pos < size() && eq(cur_[pos], c);
         }
 
         size_t skip(ustring_view s) {
@@ -72,10 +90,6 @@ namespace sb4 {
                 }
                 cur_ = substr(cur_, 1); --count;
             }
-        }
-
-        size_t skip_ws() {
-            return skip(is_space);
         }
 
         ustring_view view() const noexcept {

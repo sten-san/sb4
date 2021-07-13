@@ -11,6 +11,13 @@ namespace sb4 {
     using ustring_view = std::u16string_view;
     using namespace std::string_view_literals;
 
+    constexpr inline ustring_view snull = ustring_view();
+
+    namespace constants {
+        constexpr inline ustring_view space = u" \t\v\f";
+        constexpr inline ustring_view newline = u"\r\n";
+    }
+
     template <typename String>
     constexpr String substr(
         const String &s,
@@ -36,15 +43,19 @@ namespace sb4 {
     }
 
     constexpr bool is_alnum(uchar c) noexcept {
-        return is_alnum(c) || is_digit(c);
+        return is_alpha(c) || is_digit(c);
+    }
+
+    constexpr bool is_alnumbar(uchar c) noexcept {
+        return is_alnum(c) || c == u'_';
     }
 
     constexpr bool is_space(uchar c) noexcept {
-        return u" \t\v\f"sv.find(c) != ustring_view::npos;
+        return constants::space.find(c) != ustring_view::npos;
     }
 
     constexpr bool is_newline(uchar c) noexcept {
-        return u"\r\n"sv.find(c) != ustring_view::npos;
+        return constants::newline.find(c) != ustring_view::npos;
     }
 
     constexpr uchar to_upper(uchar c) noexcept {
@@ -61,13 +72,17 @@ namespace sb4 {
         return c;
     }
 
+    constexpr bool roughly_equal_c(uchar l, uchar r) noexcept {
+        return to_upper(l) == to_upper(r);
+    }
+
     constexpr bool roughly_equal(ustring_view l, ustring_view r) {
         if (l.size() != r.size()) {
             return false;
         }
 
         for (ustring_view::size_type i = 0; i < l.size(); ++i) {
-            if (to_upper(l[i]) != to_upper(r[i])) {
+            if (!roughly_equal_c(l[i], r[i])) {
                 return false;
             }
         }
