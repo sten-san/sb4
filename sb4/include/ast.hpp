@@ -36,11 +36,11 @@ namespace sb4 {
             }
         };
 
-        using stmt = std::unique_ptr<statement>;
-        using expr = std::unique_ptr<expression>;
+        using statement_pointer = std::unique_ptr<statement>;
+        using expression_pointer = std::unique_ptr<expression>;
 
-        using stmt_list = std::vector<stmt>;
-        using expr_list = std::vector<expr>;
+        using statement_list = std::vector<statement_pointer>;
+        using expression_list = std::vector<expression_pointer>;
 
         struct null : expression {
             void accept(ivisitor &) override;
@@ -106,32 +106,32 @@ namespace sb4 {
         struct binary : expression {
             void accept(ivisitor &) override;
 
-            binary(location loc, expr left, expr right, token_type type):
+            binary(location loc, expression_pointer left, expression_pointer right, token_type type):
                 expression(loc), left(std::move(left)), right(std::move(right)), type(type) {
             }
 
-            expr left, right;
+            expression_pointer left, right;
             token_type type;
         };
         struct unary : expression {
             void accept(ivisitor &) override;
 
-            unary(location loc, expr right, token_type type):
+            unary(location loc, expression_pointer right, token_type type):
                 expression(loc), right(std::move(right)), type(type) {
             }
 
-            expr right;
+            expression_pointer right;
             token_type type;
         };
         struct call_function : expression {
             void accept(ivisitor &) override;
 
-            call_function(location loc, ustring_view name, expr_list args):
+            call_function(location loc, ustring_view name, expression_list args):
                 expression(loc), name(name), args(std::move(args)) {
             }
 
             ustring name;
-            expr_list args;
+            expression_list args;
         };
 
         struct ivisitor {
