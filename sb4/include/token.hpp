@@ -172,6 +172,8 @@ namespace sb4 {
         ident,
         reserved,
         rvalue,
+        int_,
+        real,
         unary,
         binary,
         separator,
@@ -239,6 +241,17 @@ namespace sb4 {
             token_type::label,
         };
 
+        constexpr inline token_type int_types[] = {
+            token_type::int_2,
+            token_type::int_10,
+            token_type::int_16,
+        };
+
+        constexpr inline token_type real_types[] = {
+            token_type::real,
+            token_type::real_exp,
+        };
+
         constexpr inline token_type unary_types[] = {
             token_type::minus,
             token_type::lnot,
@@ -281,6 +294,8 @@ namespace sb4 {
             { std::size(ident_types), ident_types },
             { std::size(reserved_types), reserved_types },
             { std::size(rvalue_types), rvalue_types },
+            { std::size(int_types), int_types },
+            { std::size(real_types), real_types },
             { std::size(unary_types), unary_types },
             { std::size(binary_types), binary_types },
             { std::size(separator_types), separator_types },
