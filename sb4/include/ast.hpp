@@ -133,6 +133,16 @@ namespace sb4 {
             ustring name;
             expression_list args;
         };
+        struct subscript : expression {
+            void accept(ivisitor &) override;
+
+            subscript(location loc, expression_pointer left, expression_list indexes):
+                expression(loc), left(std::move(left)), indexes(std::move(indexes)) {
+            }
+
+            expression_pointer left;
+            expression_list indexes;
+        };
 
         struct ivisitor {
             virtual ~ivisitor() = default;
@@ -147,6 +157,7 @@ namespace sb4 {
             virtual void visit(binary &) = 0;
             virtual void visit(unary &) = 0;
             virtual void visit(call_function &) = 0;
+            virtual void visit(subscript &) = 0;
         };
 
         inline void null::accept(ivisitor &v) { v.visit(*this); }
@@ -159,6 +170,7 @@ namespace sb4 {
         inline void binary::accept(ivisitor &v) { v.visit(*this); }
         inline void unary::accept(ivisitor &v) { v.visit(*this); }
         inline void call_function::accept(ivisitor &v) { v.visit(*this); }
+        inline void subscript::accept(ivisitor &v) { v.visit(*this); }
     }
 }
 
