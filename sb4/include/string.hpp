@@ -2,10 +2,15 @@
 #include <algorithm>
 #include <string>
 #include <string_view>
+#include <charconv>
+#include <stdexcept>
+#include <cstdint>
+#include <cstdlib>
 #include <cstddef>
 
 namespace sb4 {
     using std::size_t;
+    using std::int32_t;
     using uchar = char16_t;
     using ustring = std::u16string;
     using ustring_view = std::u16string_view;
@@ -88,6 +93,48 @@ namespace sb4 {
         }
 
         return true;
+    }
+
+    template <typename Int = int32_t>
+    Int to_int(ustring_view s, int base) {
+        std::string t(s.size(), ' ');
+        std::transform(s.begin(), s.end(), t.begin(), [](auto x) {
+            return char(x);
+        });
+
+        Int v = 0;
+        auto r = std::from_chars(t.data(), t.data() + t.size(), v, base);
+
+        if (r.ec != std::errc{} || r.ptr != t.data() + t.size()) {
+            if (r.ec == std::errc::result_out_of_range) {
+                throw std::out_of_range("overflow");
+            }
+            throw std::invalid_argument("conversion failed");
+        }
+
+        return v;
+    }
+
+    double to_real(ustring_view s) {
+        std::string t(s.size(), ' ');
+        std::transform(s.begin(), s.end(), t.begin(), [](auto x) {
+            return char(x);
+        });
+
+        char *end = nullptr;
+
+        errno = 0;
+        double v = std::strtod(t.c_str(), &end);
+
+        if (size_t(end - t.c_str()) != t.size()) {
+            throw std::invalid_argument("conversion failed");
+        }
+
+        if (errno == ERANGE) {
+            throw std::out_of_range("overflow/underflow");
+        }
+
+        return v;
     }
 }
 
