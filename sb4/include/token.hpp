@@ -176,6 +176,7 @@ namespace sb4 {
         real,
         unary,
         binary,
+        terminal,
         separator,
     };
 
@@ -284,6 +285,14 @@ namespace sb4 {
             token_type::rrshift,
         };
 
+        constexpr inline token_type terminal_types[] = {
+            token_type::rparen,
+            token_type::rsub,
+            token_type::colon,
+            token_type::eol,
+            token_type::eof,
+        };
+
         constexpr inline token_type separator_types[] = {
             token_type::colon,
             token_type::eol,
@@ -298,6 +307,7 @@ namespace sb4 {
             { std::size(real_types), real_types },
             { std::size(unary_types), unary_types },
             { std::size(binary_types), binary_types },
+            { std::size(terminal_types), terminal_types },
             { std::size(separator_types), separator_types },
         };
     }
