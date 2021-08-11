@@ -184,7 +184,7 @@ namespace sb4 {
 
                 if (lex_.consume(token_class::binary)) {
                     lead = std::make_unique<ast::binary>(
-                        op.loc, std::move(lead), parse_expression(), op.type
+                        op.loc, std::move(lead), parse_expression(to_rank(op.type)), op.type
                     );
                     continue;
                 }
