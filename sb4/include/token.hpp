@@ -180,14 +180,14 @@ namespace sb4 {
         separator,
     };
 
-    namespace constants {
-        constexpr inline token_type ident_types[] = {
+    namespace token_classes {
+        constexpr inline token_type ident[] = {
             token_type::vident,
             token_type::cident,
             token_type::label,
         };
 
-        constexpr inline token_type reserved_types[] = {
+        constexpr inline token_type reserved[] = {
             token_type::if_,
             token_type::then,
             token_type::else_,
@@ -232,7 +232,7 @@ namespace sb4 {
             token_type::enum_,
         };
 
-        constexpr inline token_type rvalue_types[] = {
+        constexpr inline token_type rvalue[] = {
             token_type::int_2,
             token_type::int_10,
             token_type::int_16,
@@ -242,24 +242,24 @@ namespace sb4 {
             token_type::label,
         };
 
-        constexpr inline token_type int_types[] = {
+        constexpr inline token_type int_[] = {
             token_type::int_2,
             token_type::int_10,
             token_type::int_16,
         };
 
-        constexpr inline token_type real_types[] = {
+        constexpr inline token_type real[] = {
             token_type::real,
             token_type::real_exp,
         };
 
-        constexpr inline token_type unary_types[] = {
+        constexpr inline token_type unary[] = {
             token_type::minus,
             token_type::lnot,
             token_type::bnot,
         };
 
-        constexpr inline token_type binary_types[] = {
+        constexpr inline token_type binary[] = {
             token_type::plus,
             token_type::minus,
             token_type::mult,
@@ -285,7 +285,7 @@ namespace sb4 {
             token_type::rrshift,
         };
 
-        constexpr inline token_type terminal_types[] = {
+        constexpr inline token_type terminal[] = {
             token_type::rparen,
             token_type::rsub,
             token_type::colon,
@@ -293,32 +293,32 @@ namespace sb4 {
             token_type::eof,
         };
 
-        constexpr inline token_type separator_types[] = {
+        constexpr inline token_type separator[] = {
             token_type::colon,
             token_type::eol,
             token_type::eof,
         };
 
         constexpr inline std::tuple<size_t, const token_type *> types[] = {
-            { std::size(ident_types), ident_types },
-            { std::size(reserved_types), reserved_types },
-            { std::size(rvalue_types), rvalue_types },
-            { std::size(int_types), int_types },
-            { std::size(real_types), real_types },
-            { std::size(unary_types), unary_types },
-            { std::size(binary_types), binary_types },
-            { std::size(terminal_types), terminal_types },
-            { std::size(separator_types), separator_types },
+            { std::size(ident), ident },
+            { std::size(reserved), reserved },
+            { std::size(rvalue), rvalue },
+            { std::size(int_), int_ },
+            { std::size(real), real },
+            { std::size(unary), unary },
+            { std::size(binary), binary },
+            { std::size(terminal), terminal },
+            { std::size(separator), separator },
         };
     }
 
     constexpr bool belong(token_type type, token_class class_) noexcept {
         auto index = size_t(class_);
-        if (std::size(constants::types) <= index) {
+        if (std::size(token_classes::types) <= index) {
             return false;
         }
 
-        auto [size, first] = constants::types[index];
+        auto [size, first] = token_classes::types[index];
         auto last = first + size;
 
         while (first != last) {
