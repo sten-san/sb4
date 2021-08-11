@@ -247,10 +247,28 @@ namespace sb4 {
         }
 
         ast::expression_list parse_expression_list() {
+            auto make_null = [&]() {
+                return std::make_unique<ast::null>(lex_.cur().loc);
+            };
+
             ast::expression_list list;
 
-            while (!lex_.equal(token_class::terminal)) {
-                list.push_back(parse_expression());
+            bool next = true;
+            while (!lex_.equal(token_class::terminal) && next) {
+                if (lex_.equal(token_type::comma)) {
+                    list.push_back(make_null());
+                }
+                else {
+                    list.push_back(parse_expression());
+                }
+
+                if ((next = lex_.equal(token_type::comma))) {
+                    lex_.advance();
+                }
+            }
+
+            if (0 < list.size() && next) {
+                list.push_back(make_null());
             }
 
             return list;
