@@ -1,8 +1,10 @@
 #pragma once
 #include <algorithm>
 #include <utility>
+#include <memory>
 #include <stdexcept>
 #include <cstdint>
+#include "sb4/include/ast.hpp"
 #include "sb4/include/lexer.hpp"
 #include "sb4/include/string.hpp"
 
@@ -143,12 +145,14 @@ namespace sb4 {
 
     private:
         ast::expression_pointer parse_expression(operator_rank prev = lowest) {
-            auto lead = [&]() -> ast::expression_pointer {
+            using namespace sb4::ast;
+
+            auto lead = [&]() -> expression_pointer {
                 auto token = lex_.cur();
 
                 // parse unary
                 if (lex_.consume(token_class::unary)) {
-                    return std::make_unique<ast::unary>(
+                    return std::make_unique<expr::unary>(
                         token.loc, parse_expression(unary), token.type
                     );
                 }
@@ -171,8 +175,8 @@ namespace sb4 {
                 auto op = lex_.cur();
 
                 if (lex_.consume(token_type::lsub)) {
-                    lead = std::make_unique<ast::subscript>(
-                        op.loc, std::move(lead), parse_expression_list()
+                    lead = std::make_unique<expr::subscript>(
+                        op.loc, std::move(lead), parse_enclosed_expression_list()
                     );
 
                     if (lex_.consume(token_type::rsub)) {
@@ -183,7 +187,7 @@ namespace sb4 {
                 }
 
                 if (lex_.consume(token_class::binary)) {
-                    lead = std::make_unique<ast::binary>(
+                    lead = std::make_unique<expr::binary>(
                         op.loc, std::move(lead), parse_expression(to_rank(op.type)), op.type
                     );
                     continue;
@@ -194,49 +198,66 @@ namespace sb4 {
         }
 
         ast::expression_pointer parse_atomic() {
+            using namespace sb4::ast;
+
             auto token = lex_.cur();
 
             if (lex_.consume(token_type::cident)) {
-                return std::make_unique<ast::cident>(
+                return std::make_unique<expr::cident>(
                     token.loc, token.raw
                 );
             }
 
             if (lex_.consume(token_class::int_)) {
-                return std::make_unique<ast::int_>(
+                return std::make_unique<expr::int_>(
                     token.loc, detail::to_int(token.raw, token.type)
                 );
             }
 
             if (lex_.consume(token_class::real)) {
-                return std::make_unique<ast::real>(
+                return std::make_unique<expr::real>(
                     token.loc, detail::to_real(token.raw, token.type)
                 );
             }
 
             if (lex_.consume(token_type::string)) {
-                return std::make_unique<ast::string>(
+                return std::make_unique<expr::string>(
                     token.loc, detail::to_string(token.raw)
                 );
             }
 
             if (lex_.consume(token_type::label)) {
-                return std::make_unique<ast::label>(
+                return std::make_unique<expr::label>(
                     token.loc, token.raw
                 );
             }
 
             if (lex_.consume(token_type::vident)) {
                 if (!lex_.consume(token_type::lparen)) {
-                    return std::make_unique<ast::vident>(
+                    return std::make_unique<expr::vident>(
                         token.loc, token.raw
                     );
                 }
 
-                auto list = parse_expression_list();
+                auto list = parse_enclosed_expression_list();
                 if (lex_.consume(token_type::rparen)) {
-                    return std::make_unique<ast::call_function>(
+                    return std::make_unique<expr::call_function>(
                         token.loc, token.raw, std::move(list)
+                    );
+                }
+
+                throw std::runtime_error("')' not found");
+            }
+
+            if (lex_.consume(token_class::bfunction)) {
+                if (!lex_.consume(token_type::lparen)) {
+                    throw std::runtime_error("'(' not found");
+                }
+
+                auto list = parse_enclosed_expression_list();
+                if (lex_.consume(token_type::rparen)) {
+                    return std::make_unique<expr::call_bfunction>(
+                        token.loc, token.type, std::move(list)
                     );
                 }
 
@@ -246,32 +267,136 @@ namespace sb4 {
             throw std::runtime_error("parse atomic failed");
         }
 
-        ast::expression_list parse_expression_list() {
+        template <typename F, typename G, typename H, typename I>
+        token_type parse_expression_list(F &&first, G &&later, H &&is_delimiter, I &&is_terminal) {
+            using namespace sb4::ast;
+
             auto make_null = [&]() {
-                return std::make_unique<ast::null>(lex_.cur().loc);
+                return std::make_unique<expr::null>(lex_.cur().loc);
             };
 
-            ast::expression_list list;
-
-            bool next = true;
-            while (!lex_.equal(token_class::terminal) && next) {
-                if (lex_.equal(token_type::comma)) {
-                    list.push_back(make_null());
+            auto push = [&, f = true](token_type del, auto expr) mutable {
+                if (std::exchange(f, false)) {
+                    first(std::move(expr));
                 }
                 else {
-                    list.push_back(parse_expression());
+                    later(del, std::move(expr));
                 }
+            };
 
-                if ((next = lex_.equal(token_type::comma))) {
+            auto del = lex_.cur().type;
+
+            int count = 0;
+            bool next = true;
+            while (!is_terminal(lex_.cur().type) && next) {
+                if (is_delimiter(lex_.cur().type)) {
+                    push(del, make_null());
+                }
+                else {
+                    push(del, parse_expression());
+                }
+                ++count;
+
+                if ((next = is_delimiter(del = lex_.cur().type))) {
                     lex_.advance();
                 }
             }
 
-            if (0 < list.size() && next) {
-                list.push_back(make_null());
+            if (0 < count && next) {
+                push(del, make_null());
             }
 
+            return del;
+        }
+
+        // ("," | <expression>)* ("]" | ")" | ":" | <eol> | <eof>)
+        // ("]" | ")" | ":" | <eol> | <eof>) is not consume
+        ast::expression_list parse_enclosed_expression_list() {
+            using namespace sb4::ast;
+
+            expression_list list;
+
+            auto first = [&](auto expr) {
+                list.push_back(std::move(expr));
+            };
+            auto later = [&](token_type, auto expr) {
+                list.push_back(std::move(expr));
+            };
+            auto is_delimiter = [&](token_type del) {
+                return del == token_type::comma;
+            };
+            auto is_terminal = [&](token_type term) {
+                return belong(term, token_class::terminal);
+            };
+
+            parse_expression_list(first, later, is_delimiter, is_terminal);
+
             return list;
+        }
+
+        // ("," | <expression>)* (<separator> || (<reserved> && !<bfunction>))
+        // (<separator> || (<reserved> && !<bfunction>)) is not consume
+        ast::expression_list parse_unenclosed_expression_list() {
+            using namespace sb4::ast;
+
+            expression_list list;
+
+            auto first = [&](auto expr) {
+                list.push_back(std::move(expr));
+            };
+            auto later = [&](token_type, auto expr) {
+                list.push_back(std::move(expr));
+            };
+            auto is_delimiter = [&](token_type del) {
+                return del == token_type::comma;
+            };
+
+            parse_expression_list(first, later, is_delimiter, is_unenclosed_terminal);
+
+            return list;
+        }
+
+        constexpr static inline bool is_unenclosed_terminal(token_type term) {
+            return belong(term,
+                token_class::separator) ||
+                (belong(term, token_class::reserved) && !belong(term, token_class::bfunction)
+            );
+        }
+
+    private:
+        // <print> ("," | ";" | <expression>)*
+        ast::statement_pointer parse_print() {
+            using namespace sb4::ast;
+
+            auto token = lex_.cur();
+            if (!lex_.consume(token_type::print)) {
+                return nullptr;
+            }
+
+            auto print = std::make_unique<stmt::print>(token.loc);
+
+            auto first = [&](auto expr) {
+                print->add_expression(std::move(expr));
+            };
+            auto later = [&](token_type del, auto expr) {
+                if (del == token_type::comma) {
+                    print->add_tab();
+                }
+                print->add_expression(std::move(expr));
+            };
+            auto is_delimiter = [&](token_type del) {
+                return del == token_type::comma || del == token_type::semicolon;
+            };
+
+            auto last = parse_expression_list(first, later, is_delimiter, is_unenclosed_terminal);
+            if (is_delimiter(last)) {
+                print->args.pop_back();
+            }
+            else {
+                print->add_newline();
+            }
+
+            return print;
         }
 
     private:

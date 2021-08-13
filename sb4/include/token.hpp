@@ -178,6 +178,7 @@ namespace sb4 {
         binary,
         terminal,
         separator,
+        bfunction,
     };
 
     namespace token_classes {
@@ -299,6 +300,12 @@ namespace sb4 {
             token_type::eof,
         };
 
+        constexpr inline token_type bfunction[] = {
+            token_type::var,
+            token_type::dim,
+            token_type::call,
+        };
+
         constexpr inline std::tuple<size_t, const token_type *> types[] = {
             { std::size(ident), ident },
             { std::size(reserved), reserved },
@@ -309,6 +316,7 @@ namespace sb4 {
             { std::size(binary), binary },
             { std::size(terminal), terminal },
             { std::size(separator), separator },
+            { std::size(bfunction), bfunction },
         };
     }
 
