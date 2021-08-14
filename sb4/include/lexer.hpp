@@ -90,12 +90,12 @@ namespace sb4 {
                 }
             }
 
-            if (auto v = real(); 0 < std::size(v)) {
-                return token(v, token_type::real, reader_.loc());
-            }
-
             if (auto v = real_exp(); 0 < std::size(v)) {
                 return token(v, token_type::real_exp, reader_.loc());
+            }
+
+            if (auto v = real(); 0 < std::size(v)) {
+                return token(v, token_type::real, reader_.loc());
             }
 
             if (auto v = int_2(); 0 < std::size(v)) {

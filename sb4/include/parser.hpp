@@ -357,10 +357,9 @@ namespace sb4 {
         }
 
         constexpr static inline bool is_unenclosed_terminal(token_type term) {
-            return belong(term,
-                token_class::separator) ||
-                (belong(term, token_class::reserved) && !belong(term, token_class::bfunction)
-            );
+            return
+                belong(term, token_class::separator) ||
+                (belong(term, token_class::reserved) && !belong(term, token_class::bfunction));
         }
 
     private:
