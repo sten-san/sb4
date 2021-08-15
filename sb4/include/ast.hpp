@@ -157,6 +157,28 @@ namespace sb4 {
         }
 
         namespace stmt {
+            struct if_ : statement {
+                void accept(ivisitor &) override;
+
+                if_(location loc):
+                    if_(loc, {}, {}, {}) {
+                }
+                if_(location loc, expression_pointer cond, statement_list then, statement_list else_):
+                    statement(loc), cond(std::move(cond)), then(std::move(then)), else_(std::move(else_)) {
+                }
+
+                expression_pointer cond;
+                statement_list then, else_;
+            };
+            struct goto_ : statement {
+                void accept(ivisitor &) override;
+
+                goto_(location loc, expression_pointer label):
+                    statement(loc), label(std::move(label)) {
+                }
+
+                expression_pointer label;
+            };
             struct print : statement {
                 void accept(ivisitor &) override;
 
@@ -208,6 +230,8 @@ namespace sb4 {
             virtual void visit(expr::call_bfunction &) = 0;
             virtual void visit(expr::subscript &) = 0;
 
+            virtual void visit(stmt::if_ &) = 0;
+            virtual void visit(stmt::goto_ &) = 0;
             virtual void visit(stmt::print &) = 0;
         };
 
@@ -224,6 +248,8 @@ namespace sb4 {
         inline void expr::call_bfunction::accept(ivisitor &v) { v.visit(*this); }
         inline void expr::subscript::accept(ivisitor &v) { v.visit(*this); }
 
+        inline void stmt::if_::accept(ivisitor &v) { v.visit(*this); }
+        inline void stmt::goto_::accept(ivisitor &v) { v.visit(*this); }
         inline void stmt::print::accept(ivisitor &v) { v.visit(*this); }
     }
 }

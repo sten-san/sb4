@@ -41,11 +41,21 @@ namespace sb4 {
             return false;
         }
 
+        template <typename ...Args>
+        bool consume(Args ...args) {
+            return (... || consume(args));
+        }
+
         bool equal(token_type type) const noexcept {
             return cur().type == type;
         }
         bool equal(token_class class_) const noexcept {
             return cur().belong(class_);
+        }
+
+        template <typename ...Args>
+        bool equal(Args ...args) const noexcept {
+            return (... || equal(args));
         }
 
         const token &prev() const noexcept {

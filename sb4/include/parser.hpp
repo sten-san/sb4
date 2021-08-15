@@ -267,6 +267,17 @@ namespace sb4 {
             throw std::runtime_error("parse atomic failed");
         }
 
+        ast::expression_pointer parse_label() {
+            auto token = lex_.cur();
+            if (!lex_.consume(token_type::label)) {
+                throw std::runtime_error("<label> not found");
+            }
+
+            return std::make_unique<ast::expr::label>(
+                token.loc, token.raw
+            );
+        }
+
         template <typename F, typename G, typename H, typename I>
         token_type parse_expression_list(F &&first, G &&later, H &&is_delimiter, I &&is_terminal) {
             using namespace sb4::ast;
@@ -363,16 +374,117 @@ namespace sb4 {
         }
 
     private:
+        ast::statement_pointer parse_statement() {
+            if (auto v = parse_if()) {
+                return v;
+            }
+            if (auto v = parse_goto()) {
+                return v;
+            }
+            if (auto v = parse_print()) {
+                return v;
+            }
+
+            throw std::runtime_error("parse statement failed");
+        }
+
+        template <typename ...Args>
+        ast::statement_list parse_statements(Args ...until) {
+            ast::statement_list list;
+            while ((skip_separator(), !(lex_.equal(until...) || is_terminal()))) {
+                list.push_back(parse_statement());
+            }
+            return list;
+        }
+
+        ast::statement_pointer parse_if(bool elseif = false) {
+            using namespace sb4::ast;
+
+            auto loc = lex_.cur().loc;
+            if (!lex_.consume(elseif ? token_type::elseif : token_type::if_)) {
+                return nullptr;
+            }
+
+            auto if_ = std::make_unique<stmt::if_>(loc);
+            if_->cond = parse_expression();
+
+            struct scope {
+                scope(bool &v): v(v), save(v) {}
+                ~scope() { v = save; }
+                bool &v, save;
+            } _(context_.oneline);
+
+            context_.oneline = true;
+            [&] {
+                // if <expr> goto <label>
+                if (auto goto_ = lex_.cur().loc; lex_.consume(token_type::goto_)) {
+                    if_->then.push_back(std::make_unique<stmt::goto_>(
+                        goto_, parse_label()
+                    ));
+                    return;
+                }
+
+                // then
+                if (!lex_.consume(token_type::then)) {
+                    throw std::runtime_error("<then> not found");
+                }
+
+                // if <expr> then <label>
+                if (auto loc = lex_.cur().loc; lex_.equal(token_type::label)) {
+                    if_->then.push_back(std::make_unique<stmt::goto_>(
+                        loc, parse_label()
+                    ));
+                    return;
+                }
+
+                context_.oneline &= !lex_.consume(token_type::eol);
+                if_->then = parse_statements(
+                    token_type::elseif, token_type::else_, token_type::endif
+                );
+            }();
+
+            // elseif
+            if (auto v = parse_if(true)) {
+                if_->else_.push_back(std::move(v));
+                return if_;
+            }
+
+            // else
+            if (lex_.consume(token_type::else_)) {
+                // else <label>
+                if (auto loc = lex_.cur().loc; lex_.equal(token_type::label)) {
+                    if_->else_.push_back(std::make_unique<stmt::goto_>(
+                        loc, parse_label()
+                    ));
+                }
+                else {
+                    context_.oneline &= !lex_.consume(token_type::eol);
+                    if_->else_ = parse_statements(token_type::endif);
+                }
+            }
+
+            // endif
+            if (!lex_.consume(token_type::endif) && !context_.oneline) {
+                throw std::runtime_error("<endif> not found");
+            }
+
+            return if_;
+        }
+
+        ast::statement_pointer parse_goto() {
+            return nullptr;
+        }
+
         // <print> ("," | ";" | <expression>)*
         ast::statement_pointer parse_print() {
             using namespace sb4::ast;
 
-            auto token = lex_.cur();
+            auto loc = lex_.cur().loc;
             if (!lex_.consume(token_type::print)) {
                 return nullptr;
             }
 
-            auto print = std::make_unique<stmt::print>(token.loc);
+            auto print = std::make_unique<stmt::print>(loc);
 
             auto first = [&](auto expr) {
                 print->add_expression(std::move(expr));
@@ -399,7 +511,32 @@ namespace sb4 {
         }
 
     private:
+        bool is_terminal(token_type type) const {
+            if (context_.oneline && type == token_type::eol) {
+                return true;
+            }
+            return type == token_type::eof;
+        }
+
+        bool is_terminal() const {
+            return is_terminal(lex_.cur().type);
+        }
+
+        void skip_separator() {
+            while (lex_.equal(token_class::separator)) {
+                if (is_terminal()) {
+                    break;
+                }
+                lex_.advance();
+            }
+        }
+
+    private:
         lexer lex_;
+
+        struct {
+            bool oneline = false;
+        } context_;
     };
 }
 
